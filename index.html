@@ -1,11 +1,72 @@
 <!DOCTYPE html>
-<html>
-<body>
-    <input type="text" id="inputBusca" placeholder="Ex: LeBron James">
-    <button id="btnBuscar">Testar Busca</button>
-    <div id="containerTabela"></div>
+<html lang="pt-BR">
 
-    <script src="js/api.js"></script>
-    <script src="js/app.js"></script>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adivinhe o Jogador da NBA</title>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all">
+</head>
+
+<body>
+  <header>
+    <h1>Adivinhe o Jogador da NBA</h1>
+  </header>
+
+  <main>
+    <div id="buscaContainer">
+      <input type="text" id="inputBusca" placeholder="Ex: LeBron James" autocomplete="off">
+      <button id="btnBuscar">Testar Jogador</button>
+    </div>
+
+    <div id="mensagemContainer"></div>
+
+    <div id="containerTabela">
+      <table id="tabela">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Time</th>
+            <th>Conferência</th>
+            <th>Divisão</th>
+            <th>Posição</th>
+            <th>Altura</th>
+            <th>Draft</th>
+            <th>Número</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaBody">
+          <tr class="linhaTentativa">
+            <td colspan="8">1</td>
+          </tr>
+          <tr class="linhaTentativa">
+            <td colspan="8">2</td>
+          </tr>
+          <tr class="linhaTentativa">
+            <td colspan="8">3</td>
+          </tr>
+          <tr class="linhaTentativa">
+            <td colspan="8">4</td>
+          </tr>
+          <tr class="linhaTentativa">
+            <td colspan="8">5</td>
+          </tr>
+          <tr class="linhaTentativa">
+            <td colspan="8">6</td>
+          </tr>
+          <tr class="linhaTentativa">
+            <td colspan="8">7</td>
+          </tr>
+          <tr class="linhaTentativa">
+            <td colspan="8">8</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
 </body>
+
 </html>

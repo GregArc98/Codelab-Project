@@ -1,115 +1,207 @@
-// Array com 5 IDs de superestrelas da NBA para o gabarito
+// Array com IDs de superestrelas da NBA para o gabarito
 const listaIdsGabarito = [
     79, 115, 140, 192, 237
 ]; 
 let jogadorGabarito = null;
 const idsChutados = []; // Array para guardar os jogadores já tentados
+let jogoEncerrado = false;
 
 // Elementos do DOM
 const inputBusca = document.getElementById("inputBusca");
 const btnBuscar = document.getElementById("btnBuscar");
-const containerTabela = document.getElementById("containerTabela"); 
+const tabelaBody = document.getElementById("tabelaBody");
+const mensagemContainer = document.getElementById("mensagemContainer");
+
+// Exibe mensagem de feedback na tela
+function exibirMensagem(texto, tipo = "") {
+    if (!mensagemContainer) return;
+    mensagemContainer.textContent = texto;
+    mensagemContainer.className = tipo;
+}
+
+// Converte string de altura (ex: "6-6") para total de polegadas para comparar
+function parseAltura(alturaStr) {
+    if (!alturaStr || typeof alturaStr !== "string" || !alturaStr.includes("-")) return null;
+    const partes = alturaStr.split("-");
+    const pes = parseInt(partes[0]);
+    const polegadas = parseInt(partes[1]);
+    if (isNaN(pes) || isNaN(polegadas)) return null;
+    return pes * 12 + polegadas;
+}
+
+// Comparação de texto exato (ex: Time, Conferência, Divisão)
+function compararTexto(chute, alvo) {
+    if (!chute || !alvo) return "errada";
+    return chute.toLowerCase() === alvo.toLowerCase() ? "correta" : "errada"; 
+}
+
+// Comparação de posição (suporta exato e parcial, ex: G vs G-F)
+function compararPosicao(chute, alvo) {
+    if (!chute || !alvo) return "errada";
+    if (chute.toLowerCase() === alvo.toLowerCase()) return "correta";
+    
+    const posChute = chute.split("-");
+    const posAlvo = alvo.split("-");
+    const temSobreposicao = posChute.some(p => posAlvo.includes(p));
+    
+    return temSobreposicao ? "parcial" : "errada";
+}
+
+// Comparação de altura (retorna classe e seta de dica ⬆️/⬇️)
+function compararAltura(chuteStr, alvoStr) {
+    const altChute = parseAltura(chuteStr);
+    const altAlvo = parseAltura(alvoStr);
+    
+    if (altChute === null || altAlvo === null) {
+        return { status: "errada", seta: "" };
+    }
+    if (altChute === altAlvo) {
+        return { status: "correta", seta: "" };
+    }
+    return {
+        status: "errada",
+        seta: altChute > altAlvo ? "⬇️" : "⬆️"
+    };
+}
+
+// Comparação de números (Ano de Draft e Número da Camisa)
+function compararNumero(chute, alvo) {
+    if (chute === null || chute === undefined || alvo === null || alvo === undefined) {
+        return { status: "errada", seta: "" };
+    }
+    const numChute = parseInt(chute);
+    const numAlvo = parseInt(alvo);
+    
+    if (isNaN(numChute) || isNaN(numAlvo)) {
+        return { status: "errada", seta: "" };
+    }
+    if (numChute === numAlvo) {
+        return { status: "correta", seta: "" };
+    }
+    return {
+        status: "errada",
+        seta: numChute > numAlvo ? "⬇️" : "⬆️"
+    };
+}
 
 // Função que roda logo que o site abre
 async function iniciarJogo() {
-    // Sorteia um dos IDs da nossa lista
+    exibirMensagem("Sorteando jogador da rodada...", "");
     const idSorteado = listaIdsGabarito[Math.floor(Math.random() * listaIdsGabarito.length)];
-    
-    // Busca os dados dele no api.js
     jogadorGabarito = await buscarJogadorPorId(idSorteado);
-}
-
-// Regras de comparação
-function compararTexto(chute, alvo) {
-    return chute === alvo ? "correta" : "errada"; 
-}
-
-function compararNumero(chute, alvo) {
-    if (chute === alvo) return "correta";
-    // Se o usuário chutou um número maior que o alvo, a dica é descer 
-    return chute > alvo ? "menor" : "maior"; 
-}
-
-// O evento de clique
-btnBuscar.addEventListener("click", async () => {
-    const nomeDigitado = inputBusca.value.trim();
-    if (nomeDigitado === "" || !jogadorGabarito) return;
     
-    // Busca os dados do chute na API
+    if (jogadorGabarito) {
+        exibirMensagem("", "");
+    } else {
+        exibirMensagem("Erro ao carregar jogador. Tente recarregar a página.", "erro");
+    }
+}
+
+// Processa o chute do usuário
+async function processarChute() {
+    if (jogoEncerrado) return;
+    
+    const nomeDigitado = inputBusca.value.trim();
+    if (nomeDigitado === "") return;
+    
+    if (!jogadorGabarito) {
+        exibirMensagem("Aguarde o jogo carregar...", "erro");
+        return;
+    }
+    
+    btnBuscar.disabled = true;
+    exibirMensagem("Buscando jogador...", "");
+    
     const jogadorChute = await buscarJogadorPorNome(nomeDigitado);
+    btnBuscar.disabled = false;
     
     if (!jogadorChute) {
-        // Verifica se o usuário digitou apenas uma palavra
-        if (nomeDigitado.split(" ").length === 1) {
-            alert("Por favor, digite o nome e o sobrenome do jogador (ex: LeBron James).");
-        } else {
-            alert("Jogador não encontrado na base de dados! Verifique a ortografia.");
-        }
+        exibirMensagem("Jogador não encontrado na base de dados! Verifique o nome.", "erro");
         return;
     }
 
-    // Verifica se o ID do jogador já está na lista de chutados
     if (idsChutados.includes(jogadorChute.id)) {
-        alert("Você já tentou esse jogador!");
-        inputBusca.value = ""; // Limpa o campo para a próxima tentativa
+        exibirMensagem("Você já tentou esse jogador!", "erro");
+        inputBusca.value = "";
         return;
     }
     
-    // Adiciona o jogador na lista de tentativas 
+    // Limpa qualquer mensagem de erro anterior
+    exibirMensagem("", "");
     idsChutados.push(jogadorChute.id);
 
-    // Comparando os atributos
-    const statusTime = compararTexto(jogadorChute.team.abbreviation, jogadorGabarito.team.abbreviation);
-    const statusPosicao = compararTexto(jogadorChute.position, jogadorGabarito.position);
+    // Comparando todos os 8 atributos
+    const timeChute = jogadorChute.team ? jogadorChute.team.abbreviation : "-";
+    const timeGabarito = jogadorGabarito.team ? jogadorGabarito.team.abbreviation : "-";
+    const statusTime = compararTexto(timeChute, timeGabarito);
     
-    // Tratando números
-    const numCamisaChute = parseInt(jogadorChute.jersey_number) || 0;
-    const numCamisaGabarito = parseInt(jogadorGabarito.jersey_number) || 0;
-    const statusCamisa = compararNumero(numCamisaChute, numCamisaGabarito);
-    
-    const anoDraftChute = parseInt(jogadorChute.draft_year) || 0;
-    const anoDraftGabarito = parseInt(jogadorGabarito.draft_year) || 0;
-    const statusDraft = compararNumero(anoDraftChute, anoDraftGabarito);
+    const confChute = jogadorChute.team ? jogadorChute.team.conference : "-";
+    const confGabarito = jogadorGabarito.team ? jogadorGabarito.team.conference : "-";
+    const statusConf = compararTexto(confChute, confGabarito);
 
-    // Definindo as setinhas
-    const setaCamisa = statusCamisa === "maior" ? "⬆️" : statusCamisa === "menor" ? "⬇️" : "";
-    const setaDraft = (jogadorChute.draft_year === null || statusDraft === "correta") ? "" : (statusDraft === "maior" ? "⬆️" : "⬇️");
+    const divChute = jogadorChute.team ? jogadorChute.team.division : "-";
+    const divGabarito = jogadorGabarito.team ? jogadorGabarito.team.division : "-";
+    const statusDiv = compararTexto(divChute, divGabarito);
 
-    // Tratando textos vazios ou nulos da API
-    const textoDraft = jogadorChute.draft_year === null ? "ND" : jogadorChute.draft_year;
-    const textoPosicao = jogadorChute.position === "" ? "-" : jogadorChute.position;
-    // Tratamento para camisas nulas ou vazias
-    const textoCamisa = (jogadorChute.jersey_number === null || jogadorChute.jersey_number === "") ? "-" : jogadorChute.jersey_number;
+    const posChute = jogadorChute.position || "-";
+    const posGabarito = jogadorGabarito.position || "-";
+    const statusPos = compararPosicao(posChute, posGabarito);
 
-    // Desenhando a nova linha na tela
-    const novaLinha = document.createElement("div");
-    novaLinha.style.display = "flex"; 
-    novaLinha.style.gap = "10px";
-    novaLinha.style.marginBottom = "10px";
+    const altChute = jogadorChute.height || "-";
+    const altGabarito = jogadorGabarito.height || "-";
+    const resAltura = compararAltura(altChute, altGabarito);
 
-    // Injetando o HTML com as classes dinâmicas e os textos tratados
-    novaLinha.innerHTML = `
-        <div class="caixa nome">${jogadorChute.first_name} ${jogadorChute.last_name}</div>
-        <div class="caixa ${statusTime}">${jogadorChute.team.abbreviation}</div>
-        <div class="caixa ${statusPosicao}">${textoPosicao}</div>
-        <div class="caixa ${statusCamisa === 'correta' ? 'correta' : 'errada'}">
-            ${textoCamisa} ${setaCamisa}
-        </div>
-        <div class="caixa ${statusDraft === 'correta' ? 'correta' : 'errada'}">
-            ${textoDraft} ${setaDraft}
-        </div>
-    `;
+    const draftChute = jogadorChute.draft_year;
+    const draftGabarito = jogadorGabarito.draft_year;
+    const resDraft = compararNumero(draftChute, draftGabarito);
+    const textoDraft = draftChute === null || draftChute === undefined ? "ND" : draftChute;
 
-    // Adiciona o chute mais recente no topo do contêiner
-    containerTabela.prepend(novaLinha);
-    inputBusca.value = ""; // Limpa o campo de busca
+    const camisaChute = jogadorChute.jersey_number;
+    const camisaGabarito = jogadorGabarito.jersey_number;
+    const resCamisa = compararNumero(camisaChute, camisaGabarito);
+    const textoCamisa = camisaChute === null || camisaChute === undefined || camisaChute === "" ? "-" : camisaChute;
 
-    // Checando se ganhou
+    // Atualiza a linha da tentativa atual na tabela (usando o índice do array idsChutados)
+    const numeroTentativa = idsChutados.length;
+    const linhaAtual = tabelaBody.rows[numeroTentativa - 1];
+
+    if (linhaAtual) {
+        linhaAtual.innerHTML = `
+            <td class="caixa nome">${jogadorChute.first_name} ${jogadorChute.last_name}</td>
+            <td class="caixa ${statusTime}">${timeChute}</td>
+            <td class="caixa ${statusConf}">${confChute}</td>
+            <td class="caixa ${statusDiv}">${divChute}</td>
+            <td class="caixa ${statusPos}">${posChute}</td>
+            <td class="caixa ${resAltura.status}">${altChute} ${resAltura.seta}</td>
+            <td class="caixa ${resDraft.status}">${textoDraft} ${resDraft.seta}</td>
+            <td class="caixa ${resCamisa.status}">${textoCamisa} ${resCamisa.seta}</td>
+        `;
+    }
+
+    inputBusca.value = ""; // Limpa o campo para o próximo chute
+
+    // Verifica se ganhou ou se acabaram as tentativas
     if (jogadorChute.id === jogadorGabarito.id) {
-        // Pequeno delay para a linha renderizar antes do alerta
-        setTimeout(() => alert("Você acertou! Fim de jogo."), 300); 
+        jogoEncerrado = true;
+        inputBusca.disabled = true;
+        btnBuscar.disabled = true;
+        exibirMensagem(`🎉 Excelente! Você acertou em ${numeroTentativa} ${numeroTentativa === 1 ? 'tentativa' : 'tentativas'}!`, "sucesso");
+    } else if (idsChutados.length >= 8) {
+        jogoEncerrado = true;
+        inputBusca.disabled = true;
+        btnBuscar.disabled = true;
+        exibirMensagem(`❌ Fim de jogo! O jogador era ${jogadorGabarito.first_name} ${jogadorGabarito.last_name}.`, "erro");
+    }
+}
+
+// Event Listeners
+btnBuscar.addEventListener("click", processarChute);
+
+inputBusca.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        processarChute();
     }
 });
 
-// Dá a partida no jogo assim que o script é lido
+// Inicia o jogo
 iniciarJogo();
