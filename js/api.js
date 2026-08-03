@@ -17,7 +17,7 @@ async function buscarJogadorPorNome(nome) {
             const primeiroNome = partes[0];
             const sobrenome = partes.slice(1).join(" ");
             
-            // 1. Tenta por first_name + last_name
+            // Tenta por first_name + last_name
             const url = `${BASE_URL}/players?first_name=${encodeURIComponent(primeiroNome)}&last_name=${encodeURIComponent(sobrenome)}`;
             const res = await fetch(url, { headers: { "Authorization": API_KEY } });
             if (res.ok) {
@@ -27,7 +27,7 @@ async function buscarJogadorPorNome(nome) {
                 }
             }
 
-            // 2. Se não achou, tenta search pelo sobrenome
+            // Se não achou, tenta search pelo sobrenome
             if (resultados.length === 0) {
                 const urlSobrenome = `${BASE_URL}/players?search=${encodeURIComponent(sobrenome)}`;
                 const resSub = await fetch(urlSobrenome, { headers: { "Authorization": API_KEY } });
@@ -39,7 +39,7 @@ async function buscarJogadorPorNome(nome) {
                 }
             }
 
-            // 3. Se não achou, tenta search pelo primeiro nome
+            // Se não achou, tenta search pelo primeiro nome
             if (resultados.length === 0) {
                 const urlPrimeiro = `${BASE_URL}/players?search=${encodeURIComponent(primeiroNome)}`;
                 const resPrim = await fetch(urlPrimeiro, { headers: { "Authorization": API_KEY } });
@@ -51,7 +51,7 @@ async function buscarJogadorPorNome(nome) {
                 }
             }
         } else {
-            // Se o usuário digitou apenas 1 palavra (ex: "LeBron" ou "Curry")
+            // Se o usuário digitou apenas 1 palavra
             const url = `${BASE_URL}/players?search=${encodeURIComponent(nomeTrim)}`;
             const res = await fetch(url, { headers: { "Authorization": API_KEY } });
             if (res.ok) {

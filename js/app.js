@@ -35,7 +35,7 @@ function compararTexto(chute, alvo) {
     return chute.toLowerCase() === alvo.toLowerCase() ? "correta" : "errada"; 
 }
 
-// Comparação de posição (suporta exato e parcial, ex: G vs G-F)
+// Comparação de posição
 function compararPosicao(chute, alvo) {
     if (!chute || !alvo) return "errada";
     if (chute.toLowerCase() === alvo.toLowerCase()) return "correta";
@@ -47,7 +47,7 @@ function compararPosicao(chute, alvo) {
     return temSobreposicao ? "parcial" : "errada";
 }
 
-// Comparação de altura (retorna classe e seta de dica ⬆️/⬇️)
+// Comparação de altura
 function compararAltura(chuteStr, alvoStr) {
     const altChute = parseAltura(chuteStr);
     const altAlvo = parseAltura(alvoStr);
@@ -161,7 +161,7 @@ async function processarChute() {
     const resCamisa = compararNumero(camisaChute, camisaGabarito);
     const textoCamisa = camisaChute === null || camisaChute === undefined || camisaChute === "" ? "-" : camisaChute;
 
-    // Atualiza a linha da tentativa atual na tabela (usando o índice do array idsChutados)
+    // Atualiza a linha da tentativa atual na tabela usando o índice do array idsChutados
     const numeroTentativa = idsChutados.length;
     const linhaAtual = tabelaBody.rows[numeroTentativa - 1];
 
@@ -194,7 +194,6 @@ async function processarChute() {
     }
 }
 
-// Event Listeners
 btnBuscar.addEventListener("click", processarChute);
 
 inputBusca.addEventListener("keydown", (e) => {
